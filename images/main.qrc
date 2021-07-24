@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="png">
+    <file>主窗口图片1.jpg</file>
+  </qresource>
+</RCC>
