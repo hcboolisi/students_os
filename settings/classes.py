@@ -9,7 +9,9 @@
 
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem
+
+from service import service
 
 
 class Ui_Form(QMainWindow):
@@ -21,9 +23,15 @@ class Ui_Form(QMainWindow):
         Form.setObjectName("Form")
         Form.resize(500, 400)
         Form.setWindowFlags(QtCore.Qt.MSWindowsFixedSizeDialogHint)
-        self.tableView = QtWidgets.QTableView(Form)
-        self.tableView.setGeometry(QtCore.QRect(5, 1, 490, 215))
-        self.tableView.setObjectName("tableView")
+        self.tableWidget = QtWidgets.QTableWidget(Form)
+        self.tableWidget.setGeometry(QtCore.QRect(5, 1, 490, 215))
+        self.tableWidget.setObjectName("tableView")
+        self.tableWidget.setShowGrid(True)
+        self.tableWidget.setAlternatingRowColors(True)
+        self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeRowsToContents()
+        self.query()
+
         self.label = QtWidgets.QLabel(Form)
         self.label.setGeometry(QtCore.QRect(10, 230, 81, 31))
         font = QtGui.QFont()
@@ -90,6 +98,18 @@ class Ui_Form(QMainWindow):
         self.pushButton_2.setText(_translate("Form", "修  改"))
         self.pushButton_3.setText(_translate("Form", "删  除"))
         self.pushButton_4.setText(_translate("Form", "退  出"))
+
+    def query(self):
+        self.tableWidget.setRowCount(0)
+        result = service.query("select * from tb_class")
+        row = len(result)
+        self.tableWidget.setRowCount(row)
+        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setHorizontalHeaderLabels(["班级编号", "所属年级", "班级名称"])
+        for i in range(row):
+            for j in range(self.tableWidget.columnCount()):
+                data = QTableWidgetItem(str(result[i][j]))
+                self.tableWidget.setItem(i, j, data)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

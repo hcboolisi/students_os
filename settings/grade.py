@@ -9,8 +9,10 @@
 
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow
-
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QMessageBox, QAbstractItemView
+# sys.path.append("../")
+from service import service
 
 class Ui_widget(QMainWindow):
     def __init__(self):
@@ -21,9 +23,17 @@ class Ui_widget(QMainWindow):
         widget.setObjectName("widget")
         widget.resize(500, 400)
         widget.setWindowFlags(QtCore.Qt.MSWindowsFixedSizeDialogHint)
-        self.tableView = QtWidgets.QTableView(widget)
-        self.tableView.setGeometry(QtCore.QRect(5, 1, 491, 221))
-        self.tableView.setObjectName("tableView")
+
+        self.tableWidget = QtWidgets.QTableWidget(widget)
+        self.tableWidget.setGeometry(QtCore.QRect(5, 1, 491, 221))
+        self.tableWidget.setObjectName("tableView")
+        self.tableWidget.setShowGrid(True)
+        self.tableWidget.setAlternatingRowColors(True)
+        self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeRowsToContents()
+        self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.query()
+
         self.label = QtWidgets.QLabel(widget)
         self.label.setGeometry(QtCore.QRect(10, 260, 81, 31))
         font = QtGui.QFont()
@@ -45,6 +55,8 @@ class Ui_widget(QMainWindow):
         self.pushButton = QtWidgets.QPushButton(widget)
         self.pushButton.setGeometry(QtCore.QRect(60, 327, 93, 41))
         self.pushButton.setObjectName("pushButton")
+        self.pushButton.clicked.connect(self.add)
+
         self.pushButton_2 = QtWidgets.QPushButton(widget)
         self.pushButton_2.setGeometry(QtCore.QRect(170, 327, 93, 41))
         self.pushButton_2.setObjectName("pushButton_2")
@@ -70,6 +82,41 @@ class Ui_widget(QMainWindow):
         self.pushButton_3.setText(_translate("widget", "删  除"))
         self.pushButton_4.setText(_translate("widget", "退  出"))
 
+    def query(self):
+        self.tableWidget.setRowCount(0)
+        result = service.query("select * from tb_grade")
+        row = len(result)
+        self.tableWidget.setRowCount(row)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setHorizontalHeaderLabels(["年级编号", "年级名称"])
+        self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        # self.tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        for i in range(row):
+            for j in range(self.tableWidget.columnCount()):
+                data = QTableWidgetItem(str(result[i][j]))
+                data.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+                self.tableWidget.setItem(i, j, data)
+
+    def getName(self, name):
+        result = service.query("select * from tb_grade where gradeName = %s", name)
+        return len(result)
+
+    def add(self):
+        gradeID = self.lineEdit.text()
+        gradeName = self.lineEdit_2.text()
+        if gradeID != "" and gradeName != "":
+            if self.getName(gradeName) > 0:
+               self.lineEdit_2.setText("")
+               QMessageBox.information(None, "提示", "您要添加的年级已存在，请重新输入！",
+                                     QMessageBox.OK)
+            else:
+                result = service.exec("insert into tb_grade(gradeID,gradeName) values (%s,%s)",
+                                      (gradeID, gradeName))
+                if result > 0:
+                    self.query()
+                    QMessageBox.information(None, "提示", "信息添加成功", QMessageBox.Ok)
+        else:
+            QMessageBox.information(None, "警告", "请输入数据后再执行相关操作！", QMessageBox.Ok)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
