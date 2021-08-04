@@ -9,8 +9,8 @@
 
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem
-
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QMessageBox, QAbstractItemView
 from service import service
 
 
@@ -30,6 +30,7 @@ class Ui_Form(QMainWindow):
         self.tableWidget.setAlternatingRowColors(True)
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.resizeRowsToContents()
+        self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.query()
 
         self.label = QtWidgets.QLabel(Form)
@@ -38,45 +39,57 @@ class Ui_Form(QMainWindow):
         font.setPointSize(10)
         self.label.setFont(font)
         self.label.setObjectName("label")
+
         self.comboBox = QtWidgets.QComboBox(Form)
         self.comboBox.setGeometry(QtCore.QRect(100, 230, 111, 31))
         self.comboBox.setObjectName("comboBox")
+        self.bindGrade()
+
+
         self.label_2 = QtWidgets.QLabel(Form)
         self.label_2.setGeometry(QtCore.QRect(10, 280, 81, 31))
         font = QtGui.QFont()
         font.setPointSize(10)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
+
         self.lineEdit = QtWidgets.QLineEdit(Form)
         self.lineEdit.setGeometry(QtCore.QRect(90, 280, 141, 31))
         self.lineEdit.setObjectName("lineEdit")
+
         self.label_3 = QtWidgets.QLabel(Form)
         self.label_3.setGeometry(QtCore.QRect(250, 280, 81, 31))
         font = QtGui.QFont()
         font.setPointSize(10)
         self.label_3.setFont(font)
         self.label_3.setObjectName("label_3")
+
         self.lineEdit_2 = QtWidgets.QLineEdit(Form)
         self.lineEdit_2.setGeometry(QtCore.QRect(340, 280, 141, 31))
         self.lineEdit_2.setObjectName("lineEdit_2")
+
         self.pushButton = QtWidgets.QPushButton(Form)
         self.pushButton.setGeometry(QtCore.QRect(60, 340, 93, 41))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
+        self.pushButton.clicked.connect(self.add)
+
         self.pushButton_2 = QtWidgets.QPushButton(Form)
         self.pushButton_2.setGeometry(QtCore.QRect(170, 340, 93, 41))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.pushButton_2.setFont(font)
         self.pushButton_2.setObjectName("pushButton_2")
+
         self.pushButton_3 = QtWidgets.QPushButton(Form)
         self.pushButton_3.setGeometry(QtCore.QRect(280, 340, 93, 41))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.pushButton_3.setFont(font)
         self.pushButton_3.setObjectName("pushButton_3")
+
         self.pushButton_4 = QtWidgets.QPushButton(Form)
         self.pushButton_4.setGeometry(QtCore.QRect(390, 340, 93, 41))
         font = QtGui.QFont()
@@ -101,7 +114,7 @@ class Ui_Form(QMainWindow):
 
     def query(self):
         self.tableWidget.setRowCount(0)
-        result = service.query("select * from tb_class")
+        result = service.query("select classID,gradeName,className from v_classinfo")
         row = len(result)
         self.tableWidget.setRowCount(row)
         self.tableWidget.setColumnCount(3)
@@ -109,7 +122,46 @@ class Ui_Form(QMainWindow):
         for i in range(row):
             for j in range(self.tableWidget.columnCount()):
                 data = QTableWidgetItem(str(result[i][j]))
+                data.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
                 self.tableWidget.setItem(i, j, data)
+
+    def bindGrade(self):
+        result = service.query('select gradeName from tb_grade')
+        for i in result:
+            self.comboBox.addItem(i[0])
+
+    def getName(self, cid, name):
+        result = service.query("select * from tb_class where gradeID = %s and className = %s", cid, name)
+        return len(result)
+
+    def add(self):
+        classID = self.lineEdit.text()
+        className = self.lineEdit_2.text()
+        if self.comboBox.currentText() != "":
+            result = service.query("select gradeID from tb_grade where gradeName = %s",
+                                   self.comboBox.currentText())
+            if len(result) > 0:
+                gradeID = result[0]
+                if classID != "" and className != "":
+                    if self.getName(gradeID, className) > 0:
+                        self.lineEdit.setText("")
+                        self.lineEdit_2.setText("")
+                        QMessageBox.information(None, "提示", "您要添加的班级已存在，请重新输入！",
+                                                QMessageBox.Ok)
+                    else:
+                        result = service.exec("insert into tb_class(classID,gradeID,className) values (%s,%s,%s)",
+                                              (classID, gradeID, className))
+                        if result > 0:
+                            self.query()
+                            self.lineEdit.setText("")
+                            self.lineEdit_2.setText("")
+                            QMessageBox.information(None, "提示", "信息添加成功", QMessageBox.Ok)
+                else:
+                    QMessageBox.warning(None, "警告", "请输入数据后再执行相关操作！", QMessageBox.Ok)
+        else:
+            QMessageBox.warning(None, "警告", "请先添加年级！", QMessageBox.Ok)
+
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
