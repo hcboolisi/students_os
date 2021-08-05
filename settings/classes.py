@@ -31,6 +31,7 @@ class Ui_Form(QMainWindow):
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.resizeRowsToContents()
         self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableWidget.itemClicked.connect(self.getItem)
         self.query()
 
         self.label = QtWidgets.QLabel(Form)
@@ -82,6 +83,7 @@ class Ui_Form(QMainWindow):
         font.setPointSize(11)
         self.pushButton_2.setFont(font)
         self.pushButton_2.setObjectName("pushButton_2")
+        self.pushButton_2.clicked.connect(self.edit)
 
         self.pushButton_3 = QtWidgets.QPushButton(Form)
         self.pushButton_3.setGeometry(QtCore.QRect(280, 340, 93, 41))
@@ -89,6 +91,7 @@ class Ui_Form(QMainWindow):
         font.setPointSize(11)
         self.pushButton_3.setFont(font)
         self.pushButton_3.setObjectName("pushButton_3")
+        self.pushButton_3.clicked.connect(self.delete)
 
         self.pushButton_4 = QtWidgets.QPushButton(Form)
         self.pushButton_4.setGeometry(QtCore.QRect(390, 340, 93, 41))
@@ -134,6 +137,11 @@ class Ui_Form(QMainWindow):
         result = service.query("select * from tb_class where gradeID = %s and className = %s", cid, name)
         return len(result)
 
+    def getItem(self, item):
+        if item.column() == 0:
+            self.select = item.text()
+            self.lineEdit.setText(self.select)
+
     def add(self):
         classID = self.lineEdit.text()
         className = self.lineEdit_2.text()
@@ -161,6 +169,49 @@ class Ui_Form(QMainWindow):
         else:
             QMessageBox.warning(None, "警告", "请先添加年级！", QMessageBox.Ok)
 
+    def edit(self):
+        try:
+            if self.select != "":
+                className = self.lineEdit_2.text()
+                if self.comboBox.currentText() != "":
+                    result = service.query('select gradeID from tb_grade where gradeName = %s',
+                                           self.comboBox.currentText())
+                    if len(result) > 0:
+                        gradeID = result[0]
+                        if className != "":
+                            if self.getName(gradeID, className) > 0:
+                                self.lineEdit_2.setText("")
+                                QMessageBox.information(None, '提示', '您要修改的班级已存在！请重新输入',
+                                                        QMessageBox.Ok)
+                            else:
+                               result = service.exec('update tb_class set gradeID=%s , className=%s where classID = %s',
+                                                     (gradeID, className, self.select))# 这三个数值的逗号是一定要打，
+                                                                                       # 不然会错误
+                               if result > 0:
+                                   self.query()
+                                   self.lineEdit_2.setText("")
+                                   QMessageBox.information(None, '提示', '信息修改成功', QMessageBox.Ok)
+                               else:
+                                   QMessageBox.information(None, '提示', '修改不成功', QMessageBox.Ok)
+                        else:
+                            QMessageBox.warning(None, '警告', '请输入要修改的内容', QMessageBox.Ok)
+        except:
+            QMessageBox.warning(None, '警告', '请先选择要修改的数据', QMessageBox.Ok)
+            self.lineEdit.setText('')
+            self.lineEdit_2.setText('')
+
+    def delete(self):
+        try:
+            if self.select != '':
+                result = service.exec('delete from tb_class where classID = %s', self.select)
+                if result > 0:
+                    QMessageBox.information(None, '提示', '信息删除成功', QMessageBox.Ok)
+                    self.lineEdit.setText('')
+                    self.query()
+        except:
+            QMessageBox.warning(None, '警告', '请选择要删除的数据', QMessageBox.Ok)
+            self.lineEdit.setText('')
+            self.lineEdit_2.setText('')
 
 
 if __name__ == "__main__":
