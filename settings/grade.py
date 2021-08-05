@@ -159,7 +159,7 @@ class Ui_widget(QMainWindow):
     def delete(self):
         try:
             if self.select != "":
-                result = service.exec("delete from tb_grade where gradeID = %s",(self.select))
+                result = service.exec("delete from tb_grade where gradeID = %s", self.select)
                 if result > 0:
                     self.query()
                     self.lineEdit.setText("")
