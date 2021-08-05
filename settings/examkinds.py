@@ -9,7 +9,10 @@
 
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QMessageBox, QAbstractItemView
+
+from service import service
 
 
 class Ui_widget(QMainWindow):
@@ -21,36 +24,54 @@ class Ui_widget(QMainWindow):
         widget.setObjectName("widget")
         widget.resize(500, 400)
         widget.setWindowFlags(QtCore.Qt.MSWindowsFixedSizeDialogHint)
-        self.tableView = QtWidgets.QTableView(widget)
-        self.tableView.setGeometry(QtCore.QRect(5, 1, 491, 221))
-        self.tableView.setObjectName("tableView")
+        self.tableWidget = QtWidgets.QTableWidget(widget)
+        self.tableWidget.setGeometry(QtCore.QRect(5, 1, 491, 221))
+        self.tableWidget.setObjectName("tableView")
+        self.tableWidget.setShowGrid(True)
+        self.tableWidget.setAlternatingRowColors(True)
+        self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeRowsToContents()
+        self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableWidget.itemClicked.connect(self.getItem)
+        self.query()
+
+
         self.label = QtWidgets.QLabel(widget)
         self.label.setGeometry(QtCore.QRect(10, 260, 81, 31))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.label.setFont(font)
         self.label.setObjectName("label")
+
         self.lineEdit = QtWidgets.QLineEdit(widget)
         self.lineEdit.setGeometry(QtCore.QRect(90, 260, 148, 31))
         self.lineEdit.setObjectName("lineEdit")
+
         self.label_2 = QtWidgets.QLabel(widget)
         self.label_2.setGeometry(QtCore.QRect(260, 260, 81, 31))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
+
         self.lineEdit_2 = QtWidgets.QLineEdit(widget)
         self.lineEdit_2.setGeometry(QtCore.QRect(340, 260, 148, 31))
         self.lineEdit_2.setObjectName("lineEdit_2")
+
         self.pushButton = QtWidgets.QPushButton(widget)
         self.pushButton.setGeometry(QtCore.QRect(60, 327, 93, 41))
         self.pushButton.setObjectName("pushButton")
+        self.pushButton.clicked.connect(self.add)
+
         self.pushButton_2 = QtWidgets.QPushButton(widget)
         self.pushButton_2.setGeometry(QtCore.QRect(170, 327, 93, 41))
         self.pushButton_2.setObjectName("pushButton_2")
+        self.pushButton_2.clicked.connect(self.edit)
+
         self.pushButton_3 = QtWidgets.QPushButton(widget)
         self.pushButton_3.setGeometry(QtCore.QRect(280, 327, 93, 41))
         self.pushButton_3.setObjectName("pushButton_3")
+        self.pushButton_3.clicked.connect(self.delete)
 
         self.pushButton_4 = QtWidgets.QPushButton(widget)
         self.pushButton_4.setGeometry(QtCore.QRect(390, 327, 93, 41))
@@ -69,6 +90,82 @@ class Ui_widget(QMainWindow):
         self.pushButton_2.setText(_translate("widget", "修  改"))
         self.pushButton_3.setText(_translate("widget", "删  除"))
         self.pushButton_4.setText(_translate("widget", "退  出"))
+
+    def query(self):
+        self.tableWidget.setRowCount(0)
+        result = service.query("select * from tb_examkinds")
+        row = len(result)
+        self.tableWidget.setRowCount(row)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setHorizontalHeaderLabels(["类别编号", "类别名称"])
+        self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        # self.tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        for i in range(row):
+            for j in range(self.tableWidget.columnCount()):
+                data = QTableWidgetItem(str(result[i][j]))
+                data.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+                self.tableWidget.setItem(i, j, data)
+
+    def getName(self, name):
+        result = service.query("select * from tb_examkinds where kindName = %s", name)
+        return len(result)
+
+    def add(self):
+        kindID = self.lineEdit.text()
+        kindName = self.lineEdit_2.text()
+        if kindID != "" and kindName != "":
+            if self.getName(kindName) > 0:
+                self.lineEdit_2.setText("")
+                QMessageBox.information(None, "提示", "您要添加的类别已存在，请重新输入！",
+                                        QMessageBox.Ok)
+            else:
+                result = service.exec("insert into tb_examkinds(kindID,kindName) values (%s,%s)",
+                                      (kindID, kindName))
+                if result > 0:
+                    self.query()
+                    self.lineEdit.setText("")
+                    self.lineEdit_2.setText("")
+                    QMessageBox.information(None, "提示", "信息添加成功", QMessageBox.Ok)
+        else:
+            QMessageBox.information(None, "警告", "请输入数据后再执行相关操作！", QMessageBox.Ok)
+
+    def getItem(self, item):
+        if item.column() == 0:
+            self.select = item.text()
+            self.lineEdit.setText(self.select)
+
+    def edit(self):
+        try:
+            if self.select != "":
+                kindName = self.lineEdit_2.text()
+                if kindName != "":
+                    if self.getName(kindName) > 0:
+                        self.lineEdit_2.setText("")
+                        QMessageBox.information(None, '提示', '您要修改的类别已存在，请重新输入！',
+                                                QMessageBox.Ok)
+                    else:
+                        result = service.exec("update tb_examkinds set kindName = %s where kindID = %s",
+                                              (kindName, self.select))
+                        if result > 0:
+                            self.query()
+                            self.lineEdit.setText("")
+                            self.lineEdit_2.setText("")
+                            QMessageBox.information(None, '提示', '信息修改成功！', QMessageBox.Ok)
+                else:
+                    QMessageBox.information(None, '提示', '请输入需要修改的内容！', QMessageBox.Ok)
+        except:
+            QMessageBox.warning(None, '警告', '请先选择要修改的数据！', QMessageBox.Ok)
+
+    def delete(self):
+        try:
+            if self.select != "":
+                result = service.exec("delete from tb_examkinds where kindID = %s", self.select)
+                if result > 0:
+                    self.query()
+                    self.lineEdit.setText("")
+                    QMessageBox.information(None, '提示', '信息删除成功！', QMessageBox.Ok)
+        except:
+            QMessageBox.warning(None, '警告', '请先选择要删除的数据！', QMessageBox.Ok)
 
 
 if __name__ == "__main__":
