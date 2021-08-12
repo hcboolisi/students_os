@@ -15,9 +15,7 @@ def open():
 
 def exec(sql, values):
     db = open()
-    print(db)
     cursor = db.cursor()
-    print(cursor)
     try:
         cursor.execute(sql, values)
         db.commit()
@@ -42,9 +40,7 @@ def query(sql, *keys):
 
 def query2(sql):
     db = open()
-    print(db)
     cursor = db.cursor()
-    print(cursor)
     cursor.execute(sql)
     result = cursor.fetchall()
     cursor.close()
