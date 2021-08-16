@@ -328,6 +328,7 @@ class Ui_MainWindow(QMainWindow):
         except:
             QMessageBox.warning(None, "警告", "请先选择你要删除的数据！", QMessageBox.Ok)
 
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
