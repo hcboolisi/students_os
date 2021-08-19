@@ -9,7 +9,7 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QTableWidgetItem, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QTableWidgetItem
 from service import service
 
 class Ui_MainWindow(QMainWindow):
