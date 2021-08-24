@@ -9,9 +9,7 @@
 
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
-
 from baseinfo import student, result
 from query import studentinfo, resultinfo
 from settings import grade, classes, examkinds, subject
@@ -134,9 +132,9 @@ class Ui_MainWindow(QMainWindow):
         self.actionJLKJ.setText(_translate("MainWindow", "年级设置"))
         self.actionsdf.setText(_translate("MainWindow", "班级设置"))
         self.actionkaoshi_ke.setText(_translate("MainWindow", "考试科目设置"))
-        self.actionkaoshi.setText(_translate("MainWindow", "考试类别"))
+        self.actionkaoshi.setText(_translate("MainWindow", "考试类别设置"))
         self.action1.setText(_translate("MainWindow", "学生信息管理"))
-        self.action2.setText(_translate("MainWindow", "成绩管理"))
+        self.action2.setText(_translate("MainWindow", "学生成绩管理"))
         self.action1_2.setText(_translate("MainWindow", "学生信息查询"))
         self.action2_2.setText(_translate("MainWindow", "学生成绩查询"))
         self.action1_3.setText(_translate("MainWindow", "用户信息维护"))
@@ -160,7 +158,7 @@ class Ui_MainWindow(QMainWindow):
     def openSet_2(self, m):
         if m.text() == "学生信息管理":
             self.m = student.Ui_MainWindow()
-        elif m.text() == "成绩管理":
+        elif m.text() == "学生成绩管理":
             self.m = result.Ui_MainWindow()
         self.m.show()
         datetime = QtCore.QDateTime.currentDateTime()
@@ -190,6 +188,7 @@ class Ui_MainWindow(QMainWindow):
         self.statusbar.showMessage("当前操作：" + m.text() +
                                    "       操作时间：" + time +
                                    "       版权所有：黄朝斌", 0)
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
