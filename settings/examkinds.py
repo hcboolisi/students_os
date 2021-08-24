@@ -11,12 +11,11 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QMessageBox, QAbstractItemView
-
 from service import service
 
 
 class Ui_widget(QMainWindow):
-    def __init__(self) -> object:
+    def __init__(self):
         super(Ui_widget, self).__init__()
         self.setupUi(self)
 
@@ -26,7 +25,7 @@ class Ui_widget(QMainWindow):
         widget.setWindowFlags(QtCore.Qt.MSWindowsFixedSizeDialogHint)
         self.tableWidget = QtWidgets.QTableWidget(widget)
         self.tableWidget.setGeometry(QtCore.QRect(5, 1, 491, 221))
-        self.tableWidget.setObjectName("tableView")
+        self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setShowGrid(True)
         self.tableWidget.setAlternatingRowColors(True)
         self.tableWidget.resizeColumnsToContents()
