@@ -9,7 +9,10 @@
 import sys
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QMessageBox
+
+from service import service
 
 
 class Ui_MainWindow(QMainWindow):
@@ -23,9 +26,9 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.setWindowFlags(QtCore.Qt.MSWindowsFixedSizeDialogHint)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.tableView = QtWidgets.QTableView(self.centralwidget)
-        self.tableView.setGeometry(QtCore.QRect(10, 10, 481, 211))
-        self.tableView.setObjectName("tableView")
+        self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
+        self.tableWidget.setGeometry(QtCore.QRect(10, 10, 481, 211))
+        self.tableWidget.setObjectName("tableView")
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(40, 240, 81, 31))
         font = QtGui.QFont()
@@ -79,6 +82,12 @@ class Ui_MainWindow(QMainWindow):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.query()
+        self.tableWidget.itemClicked.connect(self.getItem)
+        self.pushButton.clicked.connect(self.add)
+        self.pushButton_2.clicked.connect(self.edit)
+        self.pushButton_3.clicked.connect(self.delete)
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "用户信息维护"))
@@ -88,6 +97,76 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton_2.setText(_translate("MainWindow", "修   改"))
         self.pushButton_3.setText(_translate("MainWindow", "删   除"))
         self.pushButton_4.setText(_translate("MainWindow", "退   出"))
+
+    def query(self):
+        self.tableWidget.setRowCount(0)
+        result = service.query("select * from tb_user")
+        row = len(result)
+        self.tableWidget.setRowCount(row)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setHorizontalHeaderLabels(["用户名称", "用户密码"])
+        self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        # self.tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        for i in range(row):
+            for j in range(self.tableWidget.columnCount()):
+                data = QTableWidgetItem(str(result[i][j]))
+                data.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+                self.tableWidget.setItem(i, j, data)
+
+    def getName(self, name):
+        result = service.query("select * from tb_user where userName = %s", name)
+        return len(result)
+
+    def add(self):
+        user_name = self.lineEdit.text()
+        user_pwd = self.lineEdit_2.text()
+        if user_name != "" and user_pwd != "":
+            if self.getName(user_name) > 0:
+                self.lineEdit.setText("")
+                self.lineEdit_2.setText("")
+                QMessageBox.information(None, "提示", "您要添加的用户名已存在，请重新输入！",
+                                     QMessageBox.Ok)
+            else:
+                result = service.exec("insert into tb_user(userName,userPwd) values (%s,%s)",
+                                      (user_name, user_pwd))
+                if result > 0:
+                    self.query()
+                    self.lineEdit.setText("")
+                    self.lineEdit_2.setText("")
+                    QMessageBox.information(None, "提示", "信息添加成功", QMessageBox.Ok)
+        else:
+            QMessageBox.information(None, "警告", "请输入数据后再执行相关操作！", QMessageBox.Ok)
+
+    def getItem(self, item):
+        if item.column() == 0:
+            self.select = item.text()
+            self.lineEdit.setText(self.select)
+
+    def edit(self):
+        try:
+            if self.select != "":
+                user_pwd = self.lineEdit_2.text()
+                result = service.exec("update tb_user set userPwd = %s where userName = %s",
+                                      (user_pwd, self.select))
+                if result > 0:
+                    self.query()
+                    self.lineEdit.setText("")
+                    self.lineEdit_2.setText("")
+                    QMessageBox.information(None, '提示', '信息修改成功！', QMessageBox.Ok)
+        except:
+            QMessageBox.warning(None, '警告', '请先选择要修改的数据！', QMessageBox.Ok)
+
+    def delete(self):
+        try:
+            if self.select != "":
+                result = service.exec("delete from tb_user where userName = %s", self.select)
+                if result > 0:
+                    self.query()
+                    self.lineEdit.setText("")
+                    QMessageBox.information(None,'提示', '信息删除成功！', QMessageBox.Ok)
+        except:
+            QMessageBox.warning(None, '警告', '请先选择要删除的数据！', QMessageBox.Ok)
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
